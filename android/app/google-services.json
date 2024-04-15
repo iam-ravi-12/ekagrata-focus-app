@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "411580960433",
+    "project_id": "ekagrata-app-7b025",
+    "storage_bucket": "ekagrata-app-7b025.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:411580960433:android:e1a23c3346c10f0e875c90",
+        "android_client_info": {
+          "package_name": "com.example.ekagrata_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB6xjRGNTXz6IzcWnN13PpcsQdAYcGrlZw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
