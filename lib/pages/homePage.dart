@@ -1,4 +1,5 @@
 // import 'package:ekagrata/Screen/graph/home_page_graph.dart';
+import 'package:ekagrata_app/app/appWithIcon.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
@@ -15,21 +16,10 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.cyan,
-      appBar: AppBar(
-        centerTitle: true,
-        // actions: [
-        //   IconButton(
-        //       onPressed: () async {
-        //         await FirebaseAuth.instance.signOut();
-        //       },
-        //       icon: Icon(Icons.logout_rounded))
-        // ],
-        title: Text('Home'),
-      ),
-      body: Container(
-        margin: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+    return SingleChildScrollView(
+      child: Container(
+        margin: EdgeInsets.only(top: 60, left: 10, right: 10),
+        // padding: EdgeInsets.symmetric(vertical: 20),
         child: Column(
           children: [
             Row(
@@ -122,8 +112,9 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             Container(
-              child: Text("Gaming App"),
+              child: Text("All App"),
             ),
+            // AppWithIcon(),
           ],
         ),
       ),
@@ -131,18 +122,18 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-void getDisplayName() {
-  User? user = FirebaseAuth.instance.currentUser;
+// void getDisplayName() {
+//   User? user = FirebaseAuth.instance.currentUser;
 
-  if (user != null) {
-    String? displayName = user.displayName;
+//   if (user != null) {
+//     String? displayName = user.displayName;
 
-    if (displayName != null) {
-      print('Display Name: $displayName');
-    } else {
-      print('Display Name not set');
-    }
-  } else {
-    print('User not signed in');
-  }
-}
+//     if (displayName != null) {
+//       print('Display Name: $displayName');
+//     } else {
+//       print('Display Name not set');
+//     }
+//   } else {
+//     print('User not signed in');
+//   }
+// }

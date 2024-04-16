@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
+import '../../navbar/customnavbar.dart';
 import 'firebaseFunctions.dart';
 // import 'package:flutterapp/services/functions/firebaseFunctions.dart';
 
@@ -16,6 +18,8 @@ class AuthServices {
       await FirestoreServices.saveUser(name, email, userCredential.user!.uid);
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Registration Successful')));
+      Get.off(() => CustomNavBar()); // Navigate here after successful signup
+      return true;
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -23,6 +27,7 @@ class AuthServices {
       } else if (e.code == 'email-already-in-use') {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Email Provided already Exists')));
+        return false;
       }
     } catch (e) {
       ScaffoldMessenger.of(context)
@@ -34,9 +39,10 @@ class AuthServices {
     try {
       await FirebaseAuth.instance
           .signInWithEmailAndPassword(email: email, password: password);
-
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('You are Logged in')));
+      Get.off(() => CustomNavBar()); // Navigate here after successful login
+      return true;
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -44,6 +50,7 @@ class AuthServices {
       } else if (e.code == 'wrong-password') {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Password did not match')));
+        return false;
       }
     }
   }

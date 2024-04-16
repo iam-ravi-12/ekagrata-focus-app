@@ -116,7 +116,6 @@ class CustomNavBarState extends State<CustomNavBar> {
 
   List page = [
     HomePage(),
-    // AppUsagePage(appUsageWithIcons: appUsageWithIcons!),
     FocusPage(),
     SettingPage(),
   ];
