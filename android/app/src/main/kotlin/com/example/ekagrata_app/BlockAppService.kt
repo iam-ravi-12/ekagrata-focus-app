@@ -1,4 +1,4 @@
-package com.example.flutter_screentime
+package com.example.ekagrata_app
 
 import android.app.AppOpsManager
 import android.app.KeyguardManager
@@ -23,18 +23,19 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
 
 const val CHANNEL_ID = "BlockAppService_Channel_ID"
 const val NOTIFICATION_ID = 1
 
-class BlockAppService : Service() {
 
+class BlockAppService : Service() {
     private var windowManager: WindowManager? = null
     private var overlayView: View? = null
-    private val userApps = mutableListOf<ResolveInfo>() // Use mutable list for app management
+    private val CHANNEL = "ekagrata_app"
+    private var isOverlayDisplayed = false
+    private val userApps = ArrayList<ResolveInfo>()
 
-    private val params = WindowManager.LayoutParams(
+    val params = WindowManager.LayoutParams(
         WindowManager.LayoutParams.MATCH_PARENT,
         WindowManager.LayoutParams.MATCH_PARENT,
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE,
@@ -42,27 +43,24 @@ class BlockAppService : Service() {
         PixelFormat.TRANSLUCENT
     )
 
-    private fun isDeviceLocked(context: Context): Boolean {
+
+    fun isDeviceLocked(context: Context): Boolean {
         val keyguardManager = context.getSystemService(KEYGUARD_SERVICE) as KeyguardManager
+
         return keyguardManager.isKeyguardLocked
     }
 
-    // Function to check for UsageStats permission (important for Android 11+)
-    private fun hasUsageStatsPermission(context: Context): Boolean {
-        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = appOps.checkOpNoThrow(AppOpsManager.OP_GET_USAGE_STATS, context.applicationInfo.uid, context.packageName)
-        return mode == AppOpsManager.MODE_ALLOWED
-    }
 
-    private fun blockApps() {
+    fun blockApps() {
         val intent = Intent(Intent.ACTION_MAIN, null)
-            .addCategory(Intent.CATEGORY_LAUNCHER)
+        intent.addCategory(Intent.CATEGORY_LAUNCHER)
         val apps: List<ResolveInfo> = packageManager.queryIntentActivities(intent, 0)
 
         fun isAppInForeground(context: Context): Boolean {
-            val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+            val usageStatsManager =
+                context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
             val endTime = System.currentTimeMillis()
-            val beginTime = endTime - 1000 * 60 * 60 * 24 * 3 // 3 days
+            val beginTime = endTime - 1000 * 60 * 60 * 24 * 3  // 3 days
 
             val usageEvents = usageStatsManager.queryEvents(beginTime, endTime)
             var lastEvent: UsageEvents.Event? = null
@@ -75,68 +73,115 @@ class BlockAppService : Service() {
             }
 
             // Check if the most recent app is in the userApps list
-            return lastEvent?.packageName?.let { packageName ->
-                userApps.any { it.activityInfo.packageName == packageName }
-            } ?: false
+            if (lastEvent != null) {
+                for (app in userApps) {
+                    if (app.activityInfo.packageName == lastEvent.packageName) {
+                        return true
+                    }
+                }
+            }
+            return false
         }
 
         fun isLauncherApp(resolveInfo: ResolveInfo, context: Context): Boolean {
             val intent = Intent(Intent.ACTION_MAIN)
-                .addCategory(Intent.CATEGORY_HOME)
+            intent.addCategory(Intent.CATEGORY_HOME)
             val defaultLauncher = context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
-            return resolveInfo.activityInfo.packageName == defaultLauncher?.activityInfo.packageName
+            return resolveInfo.activityInfo.packageName == defaultLauncher?.activityInfo?.packageName
         }
 
-       fun blockApp() {
-    val sharedPreferences = getSharedPreferences("app_settings", Context.MODE_PRIVATE)
-    val editor = sharedPreferences.edit()
 
-    Handler(Looper.getMainLooper()).postDelayed({
-        val shouldRunLogic = sharedPreferences.getBoolean("Blocking", false)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // Check for both Draw Overlays and Usage Stats permissions
-            if (!Settings.canDrawOverlays(this@BlockAppService) || !hasUsageStatsPermission(this@BlockAppService)) {
-                editor.putBoolean("isBlocking", false)
-                editor.apply()
-                return@postDelayed // Exit if permissions are not granted
+        fun blockApp() {
+            val sharedPreferences = getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+            val editor = sharedPreferences.edit()
+
+            Handler(Looper.getMainLooper()).postDelayed(object : Runnable {
+                override fun run() {
+                    val shouldRunLogic = sharedPreferences.getBoolean("Blocking", false)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        if (!Settings.canDrawOverlays(this@BlockAppService)|| !hasUsageStatsPermission(this@BlockAppService)) {
+                            editor.putBoolean("isBlocking", false)
+                            editor.apply()
+                        }
+                    }
+                    if (isAppInForeground(this@BlockAppService) && !isDeviceLocked(this@BlockAppService)) {
+                        if (!isOverlayDisplayed && shouldRunLogic && overlayView?.windowToken == null) {
+                            isOverlayDisplayed = true
+                            windowManager?.addView(overlayView, params)
+                        }
+                    } else {
+
+                        if (isOverlayDisplayed && overlayView?.windowToken != null) {
+                            isOverlayDisplayed = false
+                            windowManager?.removeView(overlayView)
+                        }
+                    }
+                    blockApp()
+                }
+            }, 500)
+        }
+        userApps.clear()
+        // Filter out system apps
+        for (app in apps) {
+            // Exclude system apps
+            if ((app.activityInfo.packageName == "com.android.chrome" ) ||
+                ((app.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) == 0 &&
+                !app.activityInfo.name.contains("com.android.launcher") &&
+                !isLauncherApp(app, this) &&
+                app.activityInfo.packageName != this.packageName)
+            ) {
+                userApps.add(app) 
             }
         }
-
-        if (isAppInForeground(this@BlockAppService) && !isDeviceLocked(this@BlockAppService)) {
-            if (!isOverlayDisplayed && shouldRunLogic && overlayView?.windowToken == null) {
-                isOverlayDisplayed = true
-                // Request foreground service notification (optional)
-                createForegroundServiceNotification()
-                windowManager?.addView(overlayView, params)
-            } else if (isOverlayDisplayed && !shouldRunLogic || overlayView?.windowToken != null) {
-                isOverlayDisplayed = false
-                // Remove notification (if displayed)
-                stopForeground(true)
-                windowManager?.removeView(overlayView)
-            }
-        }
-    }, 1000) // Check every second (adjust delay as needed)
-}
-
-// Function to create a foreground service notification (optional)
-private fun createForegroundServiceNotification() {
-    val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "BlockAppService Channel",
-            NotificationManager.IMPORTANCE_MIN
-        )
-        channel.description = "Notification for BlockAppService"
-        notificationManager.createNotificationChannel(channel)
+        blockApp()
     }
 
-    val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
-        .setContentTitle("ScreenTime Blocker")
-        .setContentText("Blocking Apps...")
-        .setSmallIcon(R.drawable.ic_launcher) // Replace with your app icon
-        .setPriority(NotificationCompat.PRIORITY_LOW)
+    fun hasUsageStatsPermission(context: Context): Boolean {
+        val appOpsManager = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val mode = appOpsManager.checkOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            android.os.Process.myUid(),
+            context.packageName
+        )
 
-    startForeground(NOTIFICATION_ID, notificationBuilder.build())
+        return mode == AppOpsManager.MODE_ALLOWED
+    }
+
+    override fun onBind(intent: Intent): IBinder? {
+        return null
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        println("[DEBUG] onStartCommand()")
+        windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        overlayView = LayoutInflater.from(this).inflate(R.layout.block_overlay, null)
+
+        // 通知チャンネルを作成（APIレベル26以降）
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(CHANNEL_ID, "BlockAppService Channel", NotificationManager.IMPORTANCE_LOW)
+            channel.setShowBadge(false);
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
+
+        // フォアグラウンドサービスのための通知を作成
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("BlockAppService")
+            .setContentText("Service is running...")
+            .build()
+
+        // startForegroundを呼び出す
+        startForeground(NOTIFICATION_ID, notification)
+
+        blockApps()
+
+        return START_STICKY
+    }
+
+
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // 必要に応じてリソースの解放や終了処理を行います。
+    }
 }

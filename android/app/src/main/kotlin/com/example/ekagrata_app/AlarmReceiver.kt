@@ -1,19 +1,15 @@
-package com.example.flutter_screentime
+package com.example.ekagrata_app
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 
 class AlarmReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context?, intent: Intent?) {
+        val sharedPreferences =  context?.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+        val editor = sharedPreferences?.edit()
+        editor?.putBoolean("Blocking", false)
+        editor?.apply()
 
-    override fun onReceive(context: Context, intent: Intent) {
-        val sharedPreferences: SharedPreferences? = context.getSharedPreferences(
-            "app_settings",
-            Context.MODE_PRIVATE
-        )
-        sharedPreferences?.edit()
-            ?.putBoolean("Blocking", false)
-            ?.apply()
     }
 }
