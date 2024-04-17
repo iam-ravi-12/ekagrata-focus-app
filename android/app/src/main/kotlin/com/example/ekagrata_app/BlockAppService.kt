@@ -23,6 +23,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
+import android.app.ActivityManager
 
 const val CHANNEL_ID = "BlockAppService_Channel_ID"
 const val NOTIFICATION_ID = 1
@@ -72,7 +73,7 @@ class BlockAppService : Service() {
                 }
             }
 
-            // Check if the most recent app is in the userApps list
+
             if (lastEvent != null) {
                 for (app in userApps) {
                     if (app.activityInfo.packageName == lastEvent.packageName) {
@@ -94,6 +95,9 @@ class BlockAppService : Service() {
         fun blockApp() {
             val sharedPreferences = getSharedPreferences("app_settings", Context.MODE_PRIVATE)
             val editor = sharedPreferences.edit()
+            //new line 2
+            // val currentPackageName = currentActivity?.packageName ?: ""
+
 
             Handler(Looper.getMainLooper()).postDelayed(object : Runnable {
                 override fun run() {
@@ -116,14 +120,62 @@ class BlockAppService : Service() {
                             windowManager?.removeView(overlayView)
                         }
                     }
+
+                    // //new line add 1
+                    // // if (isAppInForeground(this@BlockAppService) && !isDeviceLocked(this@BlockAppService)) {
+                    // //     if (!isOverlayDisplayed && shouldRunLogic && overlayView?.windowToken == null) {
+                    // //         val currentPackageName = getCurrentPackageName(this@BlockAppService)
+                    // //         if (_gameApps.any { it.activityInfo.packageName == currentPackageName }) {
+                    // //             isOverlayDisplayed = true
+                    // //             windowManager?.addView(overlayView, params)
+                    // //         }
+                    // //     }
+                    // // } 
+                    // // else {
+                    // //     if (isOverlayDisplayed && overlayView?.windowToken != null) {
+                    // //         isOverlayDisplayed = false
+                    // //         windowManager?.removeView(overlayView)
+                    // //     }
+                    // // }
+
+                    // //new line added 1
+
+                    // // new line added 2
+
+                    // if (isAppInForeground(this@BlockAppService) && !isDeviceLocked(this@BlockAppService)) {
+                    //     if (!isOverlayDisplayed && shouldRunLogic && overlayView?.windowToken == null) {
+                    //         val currentPackageName = getCurrentPackageName(this@BlockAppService)
+                    //         if (gameAppPackageNames.contains(currentPackageName)) {
+                    //             isOverlayDisplayed = true
+                    //             windowManager?.addView(overlayView, params)
+                    //         }
+                    //     } else {
+                    //         if (isAppInForeground(this@BlockAppService) && !isDeviceLocked(this@BlockAppService)) {
+                    //                 if (!isOverlayDisplayed && shouldRunLogic && overlayView?.windowToken == null) {
+                    //                     val currentPackageName = getCurrentPackageName(this@BlockAppService)
+                    //                     if (_gameApps.any { it.activityInfo.packageName == currentPackageName }) {
+                    //                         isOverlayDisplayed = true
+                    //                         windowManager?.addView(overlayView, params)
+                    //                     }
+                    //                 }
+                    //             } 
+                    //     }
+                    // } else {
+                    //     if (isOverlayDisplayed && overlayView?.windowToken != null) {
+                    //                 isOverlayDisplayed = false
+                    //                 windowManager?.removeView(overlayView)
+                    //             }
+                    //     // ... existing code
+                    // }
+                    //new line edded 2
                     blockApp()
                 }
             }, 500)
         }
         userApps.clear()
-        // Filter out system apps
+
         for (app in apps) {
-            // Exclude system apps
+
             if ((app.activityInfo.packageName == "com.android.chrome" ) ||
                 ((app.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) == 0 &&
                 !app.activityInfo.name.contains("com.android.launcher") &&
@@ -156,7 +208,7 @@ class BlockAppService : Service() {
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         overlayView = LayoutInflater.from(this).inflate(R.layout.block_overlay, null)
 
-        // 通知チャンネルを作成（APIレベル26以降）
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(CHANNEL_ID, "BlockAppService Channel", NotificationManager.IMPORTANCE_LOW)
             channel.setShowBadge(false);
@@ -164,13 +216,13 @@ class BlockAppService : Service() {
             manager.createNotificationChannel(channel)
         }
 
-        // フォアグラウンドサービスのための通知を作成
+
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("BlockAppService")
             .setContentText("Service is running...")
             .build()
 
-        // startForegroundを呼び出す
+
         startForeground(NOTIFICATION_ID, notification)
 
         blockApps()
@@ -178,10 +230,22 @@ class BlockAppService : Service() {
         return START_STICKY
     }
 
+    //new line added 1
+
+    // private fun getCurrentPackageName(context: Context): String {
+    //     val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    //     val tasks = am.getRunningTasks(1)
+    //     if (tasks.isNotEmpty()) {
+    //         val topActivity = tasks[0].topActivity
+    //         return topActivity.packageName
+    //     }
+    //     return ""
+    // }
+
 
 
     override fun onDestroy() {
         super.onDestroy()
-        // 必要に応じてリソースの解放や終了処理を行います。
+
     }
 }

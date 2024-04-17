@@ -17,7 +17,7 @@ class HomePageGraph extends StatefulWidget {
   //     ];
 
   final Color barBackgroundColor = Colors.black.withOpacity(0.3);
-  final Color barColor = Colors.white;
+  final Color barColor = Color(0xFF2ec4b6);
   final Color touchedBarColor = Colors.green;
 
   @override

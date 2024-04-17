@@ -1,0 +1,37 @@
+import 'package:flutter/services.dart';
+
+class AppUsageTracker {
+  static const _channel = MethodChannel('com.example.app/app_usage_tracker');
+
+  static Future<Map<String, AppUsageData>> getAppUsageData(
+      List<String> packageNames) async {
+    try {
+      final usageData = await _channel
+          .invokeMethod<Map<dynamic, dynamic>>('getAppUsageData', packageNames);
+      return usageData?.cast<String, AppUsageData>() ?? {};
+    } on PlatformException catch (e) {
+      print('Failed to get app usage data: ${e.message}');
+      return {};
+    }
+  }
+}
+
+class AppUsageData {
+  final int dailyUsageTime;
+  final int weeklyUsageTime;
+  final int launchCount;
+
+  AppUsageData({
+    required this.dailyUsageTime,
+    required this.weeklyUsageTime,
+    required this.launchCount,
+  });
+
+  factory AppUsageData.fromMap(Map<dynamic, dynamic> map) {
+    return AppUsageData(
+      dailyUsageTime: map['dailyUsageTime'] as int,
+      weeklyUsageTime: map['weeklyUsageTime'] as int,
+      launchCount: map['launchCount'] as int,
+    );
+  }
+}

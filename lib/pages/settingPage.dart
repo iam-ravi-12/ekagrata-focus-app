@@ -14,12 +14,15 @@ class _SettingPageState extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.outline,
-      appBar: AppBar(),
+      backgroundColor: Color(0xFFffbe0b).withOpacity(0.7),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircleAvatar(
+            child: Text(
+              "${FirebaseAuth.instance.currentUser?.displayName![0].toUpperCase()}",
+              style: TextStyle(fontSize: 60),
+            ),
             radius: 50,
           ),
           SizedBox(height: 10),
