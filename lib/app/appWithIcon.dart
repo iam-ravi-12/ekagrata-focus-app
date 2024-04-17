@@ -67,6 +67,12 @@ class _AppWithIconState extends State<AppWithIcon> {
       List<AppUsageInfo> usageList =
           await appUsage.getAppUsage(startDate, endDate);
 
+      // **Placement Here:**
+      // List<Future<AppUsageData?>> appsUsages = usageList.map((usageInfo) async {
+      //   Application? app = await DeviceApps.getApp(usageInfo.packageName);
+      //   return app != null ? AppUsageData( usage: usageInfo.usage.inMinutes) : null;
+      // }).where((appUsage) => appUsage != null).toList();
+
       List<AppUsageData> appsUsage = [];
       for (AppUsageInfo usageInfo in usageList) {
         Application? app = await DeviceApps.getApp(usageInfo.packageName);
@@ -116,47 +122,6 @@ class _AppWithIconState extends State<AppWithIcon> {
       appBar: AppBar(
         title: Text('All Installed Apps'),
       ),
-      // body: ListView.builder(
-      //   itemCount: _apps.length,
-      //   itemBuilder: (BuildContext context, int index) {
-      //     Application app = _apps[index];
-      //     AppUsageData appUsage = _appsUsage.firstWhere(
-      //       (usage) => usage.app.packageName == app.packageName,
-      //       orElse: () =>
-      //           AppUsageData(app: app, usage: 0), // Default usage if not found
-      //     );
-      //     if (app is ApplicationWithIcon) {
-      //       return Container(
-      //         margin: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-      //         child: Container(
-      //           padding: EdgeInsets.symmetric(vertical: 10),
-      //           decoration: BoxDecoration(
-      //             border: Border(),
-      //             borderRadius: BorderRadius.circular(20),
-      //             color: Colors.grey[300],
-      //           ),
-      //           child: ListTile(
-      //             leading: Image.memory(app.icon),
-      //             title: Text(app.appName),
-      //             subtitle: Text("${appUsage.usage} minutes"), // Display usage
-      //           ),
-      //         ),
-      //       );
-      //     } else {
-      //       return Container(
-      //         padding: EdgeInsets.symmetric(vertical: 10),
-      //         decoration: BoxDecoration(
-      //           border: Border(),
-      //           borderRadius: BorderRadius.circular(25),
-      //           color: Colors.grey[300],
-      //         ),
-      //         child: ListTile(
-      //           title: Text(app.appName),
-      //         ),
-      //       );
-      //     }
-      //   },
-      // ),
       body: ListView.builder(
         itemCount: _apps.length,
         // itemCount: _gameApps.length,
@@ -179,28 +144,10 @@ class _AppWithIconState extends State<AppWithIcon> {
                 child: ListTile(
                   leading: Image.memory(app.icon),
                   title: Text(app.appName),
-                  subtitle: Text("20 minutes"),
+                  //               subtitle:  appUsage != null
+                  // ? Text("${appUsage.usage} minutes")
+                  // : Text("Usage data not available"),
                 ),
-                // child: Column(
-                //   children: [
-                //     Container(
-                //         child: Text('Gaming Apps',
-                //             style: TextStyle(fontWeight: FontWeight.bold))),
-                //     ..._gameApps.map((app) => ListTile(
-                //           leading: Image.memory(app.icon),
-                //           title: Text(app.appName),
-                //           subtitle: Text(app.packageName),
-                //         )),
-                //     Container(
-                //         child: Text('Other Apps',
-                //             style: TextStyle(fontWeight: FontWeight.bold))),
-                //     ..._otherApps.map((app) => ListTile(
-                //           leading: Image.memory(app.icon),
-                //           title: Text(app.appName),
-                //           subtitle: Text(app.packageName),
-                //         )),
-                //   ],
-                // ),
               ),
             );
           } else {
