@@ -19,6 +19,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      //ffbe0b
       backgroundColor: Color(0xFFffbe0b).withOpacity(0.7),
       body: SingleChildScrollView(
         child: Container(
@@ -73,7 +74,7 @@ class _HomePageState extends State<HomePage> {
                         animationDuration: 2000,
                         lineHeight: 20,
                         width: MediaQuery.of(context).size.width / 2.4,
-                        percent: 0.8,
+                        percent: 0.6,
                         barRadius: Radius.circular(20),
                         linearGradient:
                             LinearGradient(colors: [Colors.red, Colors.blue]),
@@ -85,7 +86,7 @@ class _HomePageState extends State<HomePage> {
                         animationDuration: 2000,
                         lineHeight: 20,
                         width: MediaQuery.of(context).size.width / 2.4,
-                        percent: 0.4,
+                        percent: 0.35,
                         barRadius: Radius.circular(20),
                         linearGradient:
                             LinearGradient(colors: [Colors.red, Colors.blue]),

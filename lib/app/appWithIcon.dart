@@ -4,9 +4,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:device_apps/device_apps.dart';
 import 'package:app_usage/app_usage.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:usage_stats/usage_stats.dart';
+
+import 'app_usage_tracker.dart';
+// import 'package:flutter/app_usage_tracker.dart';
 
 class AppUsageData {
   final ApplicationWithIcon app;
@@ -26,7 +30,7 @@ class _AppWithIconState extends State<AppWithIcon> {
   List<Application> _gameApps = [];
   List<Application> _otherApps = [];
   List<AppUsageInfo> _infoList = [];
-  // Map<String, AppUsageData> _appUsageData = {};
+  Map<String, AppUsageData> _appUsageData = {};
 
   @override
   void initState() {
@@ -42,6 +46,18 @@ class _AppWithIconState extends State<AppWithIcon> {
   //   setState(() {
   //     _appUsageData = usageData;
   //   });
+  // }
+
+  // Future<void> _loadAppUsageData() async {
+  //   try {
+  //     final usageData = await AppUsageTracker.getAppUsageData();
+  //     setState(() {
+  //       _appUsageData = usageData;
+  //       _appsUsage = usageData.values.toList();
+  //     });
+  //   } catch (error) {
+  //     print("Error getting app usage data: $error");
+  //   }
   // }
 
   getUsageStats() async {
@@ -101,7 +117,7 @@ class _AppWithIconState extends State<AppWithIcon> {
         }
       }
 
-      // apps.sort((a, b) => a.appName.compareTo(b.appName));
+      apps.sort((a, b) => a.appName.compareTo(b.appName));
       setState(() {
         _apps = apps;
         _appsUsage = appsUsage;
@@ -123,33 +139,35 @@ class _AppWithIconState extends State<AppWithIcon> {
         title: Text('All Installed Apps'),
       ),
       body: ListView.builder(
-        itemCount: _apps.length,
+        // itemCount: _apps.length,
         // itemCount: _gameApps.length,
-        // itemCount: _appsUsage.length,
+        itemCount: _appsUsage.length,
         // itemCount: _appUsageData.length,
         // itemCount: _infoList.length,
         itemBuilder: (BuildContext context, int index) {
+          // final appUsage = _appsUsage[index];
+          // final app = appUsage.app;
+          // final packageName = _appUsageData.keys.toList()[index];
+          // final usageTime = _appUsageData[packageName]!.usage;
           Application app = _apps[index];
-          // AppUsageData appUsage = _appsUsage[index];
+          // AppUsageData app = _appsUsage[index];
           if (app is ApplicationWithIcon) {
             return Container(
-              margin: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  border: Border(),
-                  borderRadius: BorderRadius.circular(20),
-                  color: Colors.grey[300],
-                ),
-                child: ListTile(
-                  leading: Image.memory(app.icon),
-                  title: Text(app.appName),
-                  //               subtitle:  appUsage != null
-                  // ? Text("${appUsage.usage} minutes")
-                  // : Text("Usage data not available"),
-                ),
-              ),
-            );
+                margin: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    border: Border(),
+                    borderRadius: BorderRadius.circular(20),
+                    color: Colors.grey[300],
+                  ),
+                  child: ListTile(
+                    leading: Image.memory(app.icon),
+                    title: Text(app.appName),
+                    // subtitle:
+                    //     Text(formatDuration(Duration(minutes: appUsage.usage))),
+                  ),
+                ));
           } else {
             return Container(
               padding: EdgeInsets.symmetric(vertical: 10),
@@ -166,5 +184,13 @@ class _AppWithIconState extends State<AppWithIcon> {
         },
       ),
     );
+  }
+
+  String formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final hours = twoDigits(duration.inHours);
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$hours:$minutes:$seconds';
   }
 }
