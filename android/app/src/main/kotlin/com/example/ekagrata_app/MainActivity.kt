@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
 import android.Manifest
 import androidx.annotation.RequiresApi
+import android.app.AppOpsManager
 
 
 
@@ -36,9 +37,16 @@ val scope = CoroutineScope(Dispatchers.Default + job)
 
 class MainActivity: FlutterActivity() {
 
-    private val CHANNEL = "ekagrata_app"
+    private val CHANNEL = "com.example.ekagrata_app"
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getAppUsageStats" -> getAppUsageStats(this, result)
+                else -> result.notImplemented()
+            }
+        }
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -50,6 +58,8 @@ class MainActivity: FlutterActivity() {
         val userApps = ArrayList<ResolveInfo>()
         val sharedPreferences = getSharedPreferences("app_settings", Context.MODE_PRIVATE)
         val editor = sharedPreferences.edit()
+
+        
 
 
 
@@ -99,7 +109,6 @@ class MainActivity: FlutterActivity() {
         
             val intent = Intent(this, AlarmReceiver::class.java)
         
-            // Android 12 (API Level 31) 以降で必要な FLAG_IMMUTABLE の追加
             val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             } else {
@@ -135,6 +144,17 @@ class MainActivity: FlutterActivity() {
             return mode == AppOpsManager.MODE_ALLOWED
         }
 
+        fun requestUsageStatsPermission(context: Context) {
+            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+            context.startActivity(intent)
+        }
+
+        fun hasUsageStatsPermission(context: Context): Boolean {
+            val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            val mode = appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), context.packageName)
+            return mode == AppOpsManager.MODE_ALLOWED
+        }
+        
         fun requestUsageStatsPermission(context: Context) {
             val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
             context.startActivity(intent)
@@ -198,6 +218,40 @@ class MainActivity: FlutterActivity() {
                     }
                 }
             }
+        }
+
+        private fun getAppUsageStats(context: Context, result: MethodChannel.Result) {
+            println("getAppUsageStats method called")
+            if (!hasPermission(context)) {
+                
+                val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+                requestUsageStatsPermission(context)
+                result.error("PERMISSION_DENIED", "Usage stats permission denied", null)
+                return
+            }
+    
+            val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+            val calendar = Calendar.getInstance()
+            calendar.add(Calendar.YEAR, -1)
+            val queryUsageStats = usageStatsManager.queryUsageStats(UsageStatsManager.INTERVAL_BEST, calendar.timeInMillis, System.currentTimeMillis())
+    
+            val appUsageStats = mutableListOf<Map<String, Any>>()
+            val packageManager = context.packageManager
+            queryUsageStats.sortedByDescending { it.lastTimeUsed }.forEach { usageStat ->
+                val appName = packageManager.getApplicationLabel(packageManager.getApplicationInfo(usageStat.packageName, 0)).toString()
+                val usageTime = usageStat.totalTimeInForeground / 1000 / 60 // Convert to minutes
+                appUsageStats.add(mapOf("appName" to appName, "usageTime" to usageTime))
+            }
+    
+            result.success(appUsageStats)
+        }
+    
+        private fun hasPermission(context: Context): Boolean {
+            val appOpsManager = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            val mode = appOpsManager.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), context.packageName)
+            return mode == AppOpsManager.MODE_ALLOWED
         }
 
 }

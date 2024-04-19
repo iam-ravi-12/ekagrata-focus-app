@@ -139,9 +139,9 @@ class _AppWithIconState extends State<AppWithIcon> {
         title: Text('All Installed Apps'),
       ),
       body: ListView.builder(
-        // itemCount: _apps.length,
+        itemCount: _apps.length,
         // itemCount: _gameApps.length,
-        itemCount: _appsUsage.length,
+        // itemCount: _appsUsage.length,
         // itemCount: _appUsageData.length,
         // itemCount: _infoList.length,
         itemBuilder: (BuildContext context, int index) {

@@ -1,12 +1,11 @@
-import 'package:ekagrata_app/app/AppUsageTracker.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:device_apps/device_apps.dart';
 import 'package:app_usage/app_usage.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter/material.dart';
-import 'package:usage_stats/usage_stats.dart';
+import 'dart:async';
+import 'dart:io';
+import 'package:flutter/services.dart';
 
 class AppUsageData {
   final ApplicationWithIcon app;
@@ -21,6 +20,8 @@ class GameAppWithIcon extends StatefulWidget {
 }
 
 class _GameAppWithIconState extends State<GameAppWithIcon> {
+  static const platform = MethodChannel('com.example.ekagrata_app'); //
+  List<dynamic> appUsageStats = [];
   List<AppUsageData> _appsUsage = [];
   List<Application> _apps = [];
   List<Application> _gameApps = [];
@@ -30,18 +31,26 @@ class _GameAppWithIconState extends State<GameAppWithIcon> {
   @override
   void initState() {
     super.initState();
-    _getApps();
-    getUsageStats();
+    if (Platform.isAndroid) {
+      _fetchAppUsageStats();
+      _getApps();
+      getUsageStats();
+    }
     // _loadAppUsageData();
   }
 
-  // _loadAppUsageData() async {
-  //   final packageNames = ['com.example.app1', 'com.example.app2'];
-  //   final usageData = await AppUsageTracker.getAppUsageData(packageNames);
-  //   setState(() {
-  //     _appUsageData = usageData;
-  //   });
-  // }
+  Future<void> _fetchAppUsageStats() async {
+    try {
+      print('Invoking getAppUsageStats method');
+      final stats = await platform.invokeMethod('getAppUsageStats');
+      print('Received app usage stats: $stats');
+      setState(() {
+        appUsageStats = stats.cast<dynamic>();
+      });
+    } on PlatformException catch (e) {
+      print('Failed to get app usage stats: ${e.message}');
+    }
+  }
 
   getUsageStats() async {
     try {
@@ -81,19 +90,6 @@ class _GameAppWithIconState extends State<GameAppWithIcon> {
         includeAppIcons: true,
       );
 
-      // List<Application> gameApps = [];
-      // List<Application> otherApps = [];
-
-      // for (Application app in apps) {
-      //   if (app.category == ApplicationCategory.game) {
-      //     gameApps.add(app);
-      //     print(app);
-      //   } else {
-      //     otherApps.add(app);
-      //     print(app);
-      //   }
-      // }
-
       setState(() {
         _apps = apps;
         _appsUsage = appsUsage;
@@ -110,35 +106,47 @@ class _GameAppWithIconState extends State<GameAppWithIcon> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: _apps.length,
-      itemBuilder: (BuildContext context, int index) {
-        Application app = _apps[index];
-        // AppUsageData appUsage = _appsUsage[index];
-        if (app is ApplicationWithIcon &&
-            app.category == ApplicationCategory.game) {
-          return Container(
-            margin: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-            child: Container(
-              padding: EdgeInsets.symmetric(vertical: 10),
-              decoration: BoxDecoration(
-                border: Border(),
-                borderRadius: BorderRadius.circular(20),
-                color: Colors.grey[300],
-              ),
-              child: ListTile(
-                leading: Image.memory(app.icon),
-                title: Text(app.appName),
-                subtitle:
-                    // Text('Usage: ${_infoList[index].usage.inMinutes} minutes'),
-                    Text('Usage: 10 minutes'),
-              ),
+    return SingleChildScrollView(
+      child: Platform.isAndroid
+          ? appUsageStats.isEmpty
+              ? Center(
+                  child: Text('No app usage data available'),
+                )
+              : ListView.builder(
+                  itemCount: appUsageStats.length, //new line added
+                  // itemCount: _apps.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final stat = appUsageStats[index];
+                    Application app = _apps[index];
+                    // AppUsageData appUsage = _appsUsage[index];
+                    if (app is ApplicationWithIcon &&
+                        app.category == ApplicationCategory.game) {
+                      return Container(
+                        margin:
+                            EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            border: Border(),
+                            borderRadius: BorderRadius.circular(20),
+                            color: Colors.grey[300],
+                          ),
+                          child: ListTile(
+                            leading: Image.memory(app.icon),
+                            title: Text(app.appName),
+                            subtitle: Text('Usage time: ${stat['usageTime']}'),
+                          ),
+                        ),
+                      );
+                    } else {
+                      return Container();
+                    }
+                  },
+                )
+          : Center(
+              child:
+                  Text("App usage data is only available on Android devices"),
             ),
-          );
-        } else {
-          return Container();
-        }
-      },
     );
   }
 }

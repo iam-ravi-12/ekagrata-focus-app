@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 
 class AppUsageTracker {
 
-  static const _channel = MethodChannel('com.example.app/app_usage_tracker');
+  static const _channel = MethodChannel('com.example.ekagrata_app/app_usage_tracker');
 
   static Future<Map<String, AppUsageData>> getAppUsageData() async {
 
