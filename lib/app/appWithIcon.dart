@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:usage_stats/usage_stats.dart';
-
+import 'dart:io';
 import 'app_usage_tracker.dart';
 // import 'package:flutter/app_usage_tracker.dart';
 
@@ -25,6 +25,8 @@ class AppWithIcon extends StatefulWidget {
 }
 
 class _AppWithIconState extends State<AppWithIcon> {
+  static const platform = MethodChannel('com.example.ekagrata_app'); //
+  List<dynamic> appUsageStats = [];
   List<AppUsageData> _appsUsage = [];
   List<Application> _apps = [];
   List<Application> _gameApps = [];
@@ -35,9 +37,30 @@ class _AppWithIconState extends State<AppWithIcon> {
   @override
   void initState() {
     super.initState();
-    _getApps();
-    getUsageStats();
+    if (Platform.isAndroid) {
+      _fetchAppUsageStats();
+      _getApps();
+      // getUsageStats();
+    }
     // _loadAppUsageData();
+  }
+
+  Future<void> _fetchAppUsageStats() async {
+    try {
+      print('Invoking getAppUsageStats method');
+      final stats = await platform.invokeMethod('getAppUsageStats');
+      print('Received app usage stats: $stats');
+      setState(() {
+        appUsageStats = stats.cast<dynamic>();
+      });
+    } on PlatformException catch (e) {
+      if (e.code == 'PERMISSION_DENIED') {
+        // Handle permission denied case
+        print('Usage stats permission denied');
+      } else {
+        print('Failed to get app usage stats: ${e.message}');
+      }
+    }
   }
 
   // _loadAppUsageData() async {
@@ -60,28 +83,28 @@ class _AppWithIconState extends State<AppWithIcon> {
   //   }
   // }
 
-  getUsageStats() async {
-    try {
-      DateTime endDate = DateTime.now();
-      DateTime startDate = endDate.subtract(Duration(minutes: 1440));
-      List<AppUsageInfo> infoList =
-          await AppUsage().getAppUsage(startDate, endDate);
-      setState(() {
-        _infoList = infoList;
-      });
-    } on AppUsageException catch (exception) {
-      print(exception);
-    }
-  }
+  // getUsageStats() async {
+  //   try {
+  //     DateTime endDate = DateTime.now();
+  //     DateTime startDate = endDate.subtract(Duration(minutes: 1440));
+  //     List<AppUsageInfo> infoList =
+  //         await AppUsage().getAppUsage(startDate, endDate);
+  //     setState(() {
+  //       _infoList = infoList;
+  //     });
+  //   } on AppUsageException catch (exception) {
+  //     print(exception);
+  //   }
+  // }
 
   _getApps() async {
-    DateTime endDate = DateTime.now();
-    DateTime startDate = endDate.subtract(Duration(minutes: 1440));
+    // DateTime endDate = DateTime.now();
+    // DateTime startDate = endDate.subtract(Duration(minutes: 1440));
 
     try {
-      AppUsage appUsage = AppUsage();
-      List<AppUsageInfo> usageList =
-          await appUsage.getAppUsage(startDate, endDate);
+      // AppUsage appUsage = AppUsage();
+      // List<AppUsageInfo> usageList =
+      //     await appUsage.getAppUsage(startDate, endDate);
 
       // **Placement Here:**
       // List<Future<AppUsageData?>> appsUsages = usageList.map((usageInfo) async {
@@ -89,14 +112,14 @@ class _AppWithIconState extends State<AppWithIcon> {
       //   return app != null ? AppUsageData( usage: usageInfo.usage.inMinutes) : null;
       // }).where((appUsage) => appUsage != null).toList();
 
-      List<AppUsageData> appsUsage = [];
-      for (AppUsageInfo usageInfo in usageList) {
-        Application? app = await DeviceApps.getApp(usageInfo.packageName);
-        if (app != null && app is ApplicationWithIcon) {
-          appsUsage
-              .add(AppUsageData(app: app, usage: usageInfo.usage.inMinutes));
-        }
-      }
+      // List<AppUsageData> appsUsage = [];
+      // for (AppUsageInfo usageInfo in usageList) {
+      //   Application? app = await DeviceApps.getApp(usageInfo.packageName);
+      //   if (app != null && app is ApplicationWithIcon) {
+      //     appsUsage
+      //         .add(AppUsageData(app: app, usage: usageInfo.usage.inMinutes));
+      //   }
+      // }
 
       List<Application> apps = await DeviceApps.getInstalledApplications(
         onlyAppsWithLaunchIntent: true,
@@ -120,7 +143,7 @@ class _AppWithIconState extends State<AppWithIcon> {
       apps.sort((a, b) => a.appName.compareTo(b.appName));
       setState(() {
         _apps = apps;
-        _appsUsage = appsUsage;
+        // _appsUsage = appsUsage;
         // _appsUsage = apps.map((app) => AppUsageData(app: app, usage: 0)).toList();
         _gameApps =
             _apps.where((app) => app.packageName.contains('game')).toList();
@@ -149,6 +172,8 @@ class _AppWithIconState extends State<AppWithIcon> {
           // final app = appUsage.app;
           // final packageName = _appUsageData.keys.toList()[index];
           // final usageTime = _appUsageData[packageName]!.usage;
+          // Application app = _apps[index];
+          final stat = appUsageStats[index];
           Application app = _apps[index];
           // AppUsageData app = _appsUsage[index];
           if (app is ApplicationWithIcon) {
@@ -164,6 +189,7 @@ class _AppWithIconState extends State<AppWithIcon> {
                   child: ListTile(
                     leading: Image.memory(app.icon),
                     title: Text(app.appName),
+                    subtitle: Text('Usage time: ${stat['usageTime']}'),
                     // subtitle:
                     //     Text(formatDuration(Duration(minutes: appUsage.usage))),
                   ),

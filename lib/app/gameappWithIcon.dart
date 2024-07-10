@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:device_apps/device_apps.dart';
 import 'package:app_usage/app_usage.dart';
 import 'package:flutter/widgets.dart';
@@ -39,6 +39,19 @@ class _GameAppWithIconState extends State<GameAppWithIcon> {
     // _loadAppUsageData();
   }
 
+  // Future<void> _fetchAppUsageStats() async {
+  //   try {
+  //     print('Invoking getAppUsageStats method');
+  //     final stats = await platform.invokeMethod('getAppUsageStats');
+  //     print('Received app usage stats: $stats');
+  //     setState(() {
+  //       appUsageStats = stats.cast<dynamic>();
+  //     });
+  //   } on PlatformException catch (e) {
+  //     print('Failed to get app usage stats: ${e.message}');
+  //   }
+  // }
+
   Future<void> _fetchAppUsageStats() async {
     try {
       print('Invoking getAppUsageStats method');
@@ -48,7 +61,12 @@ class _GameAppWithIconState extends State<GameAppWithIcon> {
         appUsageStats = stats.cast<dynamic>();
       });
     } on PlatformException catch (e) {
-      print('Failed to get app usage stats: ${e.message}');
+      if (e.code == 'PERMISSION_DENIED') {
+        // Handle permission denied case
+        print('Usage stats permission denied');
+      } else {
+        print('Failed to get app usage stats: ${e.message}');
+      }
     }
   }
 
@@ -113,8 +131,8 @@ class _GameAppWithIconState extends State<GameAppWithIcon> {
                   child: Text('No app usage data available'),
                 )
               : ListView.builder(
-                  itemCount: appUsageStats.length, //new line added
-                  // itemCount: _apps.length,
+                  // itemCount: appUsageStats.length, //new line added
+                  itemCount: _apps.length,
                   itemBuilder: (BuildContext context, int index) {
                     final stat = appUsageStats[index];
                     Application app = _apps[index];
